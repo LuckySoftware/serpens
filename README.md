@@ -32,21 +32,21 @@ El proyecto está organizado de la siguiente manera para mantener el código lim
 
 Serpens/
 │
-├── assets/                   \# Recursos gráficos (logos, íconos)
+├── assets/                   # Recursos gráficos (logos, íconos)
 │   ├── logo.png
 │   └── logo.ico
 │
-├── gui.py                    \# Lógica y estructura de la interfaz gráfica
-├── finance.py                \# Módulo con las funciones de cálculo financiero
-├── utils.py                  \# Funciones auxiliares y de validación
-├── main.py                   \# Punto de entrada para ejecutar la aplicación
+├── gui.py                    # Lógica y estructura de la interfaz gráfica
+├── finance.py                # Módulo con las funciones de cálculo financiero
+├── utils.py                  # Funciones auxiliares y de validación
+├── main.py                   # Punto de entrada para ejecutar la aplicación
 │
-├── tests/                    \# Carpeta de tests unitarios
-│   └── test\_finance.py       \# Pruebas para las fórmulas financieras
+├── tests/                    # Carpeta de tests unitarios
+│   └── test\_finance.py       # Pruebas para las fórmulas financieras
 │
-├── requirements.txt          \# Lista de dependencias de Python
-├── README.md                 \# Documentación del proyecto
-└── build\_serpens.bat         \# (Opcional) Script para automatizar la compilación en Windows
+├── requirements.txt          # Lista de dependencias de Python
+├── README.md                 # Documentación del proyecto
+└── build_serpens.bat         # (Opcional) Script para automatizar la compilación en Windows
 
 ````
 
