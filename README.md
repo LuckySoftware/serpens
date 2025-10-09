@@ -32,10 +32,9 @@ El proyecto está organizado de la siguiente manera para mantener el código lim
 
 Serpens/
 │
-├── assets/                   \# Recursos gráficos (logos, íconos, hojas de estilo)
+├── assets/                   \# Recursos gráficos (logos, íconos)
 │   ├── logo.png
-│   ├── logo.ico
-│   └── style.qss
+│   └── logo.ico
 │
 ├── gui.py                    \# Lógica y estructura de la interfaz gráfica
 ├── finance.py                \# Módulo con las funciones de cálculo financiero
