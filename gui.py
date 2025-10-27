@@ -20,6 +20,7 @@ class FinanzasApp(QMainWindow):
         self.setWindowTitle("Serpens - Calculadora Financiera")
         self.resize(900, 600)
         self.setWindowIcon(QIcon(resource_path("assets/logo.png")))
+        self.van_flow_inputs = []
         self._setup_ui()
 
     def _setup_ui(self):
@@ -87,35 +88,87 @@ class FinanzasApp(QMainWindow):
         palette = QPalette()
         palette.setColor(QPalette.ColorRole.Window, QColor("#2B2B2B"))
         palette.setColor(QPalette.ColorRole.WindowText, Qt.GlobalColor.white)
-        palette.setColor(QPalette.ColorRole.Base, QColor("#383838"))
+        palette.setColor(QPalette.ColorRole.Base, QColor("#383838")) # Funciona bien para QTextEdit
         palette.setColor(QPalette.ColorRole.Text, Qt.GlobalColor.white)
+        
+        # --- AÑADIR ESTA LÍNEA ---
+        # Define un color para el texto de ejemplo (ej. "Flujos: 2000...")
+        palette.setColor(QPalette.ColorRole.PlaceholderText, QColor("#999999"))
+        
         self.setPalette(palette)
+
+        # --- AÑADIR ESTE BLOQUE ---
+        # Forzamos el estilo de QLineEdit, que no toma bien la paleta.
+        # Esto también aplica a los QLineEdit en las otras pestañas.
+        self.setStyleSheet("""
+            QLineEdit {
+                background-color: #383838;
+                color: white;
+                border: 1px solid #555; /* Un borde sutil */
+                padding: 5px;
+                border-radius: 4px;
+            }
+
+            /* Opcional: Resaltar el campo cuando está seleccionado */
+            QLineEdit:focus {
+                border: 1px solid #4CAF50; /* Borde verde al seleccionar */
+            }
+        """)
 
     # ===== Vistas =====
     def _vista_van(self):
         w = QWidget()
         layout = QVBoxLayout(w)
+        layout.setSpacing(10) # Añade espacio entre widgets
 
         title = QLabel("💰 Cálculo del Valor Presente Neto (VAN)")
         title.setStyleSheet("font-size: 16px; font-weight: bold; color: #4CAF50;")
         layout.addWidget(title)
 
-        self.input_flujos = QLineEdit()
+        # --- Layout para Años ---
+        anos_layout = QHBoxLayout()
+        anos_label = QLabel("Número de Años:")
+        anos_label.setStyleSheet("color: #4CAF50; font-weight: bold;")
+        
+        self.input_anos_van = QLineEdit()
+        self.input_anos_van.setPlaceholderText("Ej: 3")
+        
+        btn_generar = QPushButton("Generar Campos")
+        btn_generar.clicked.connect(self._generar_campos_flujo)
+        # Damos un estilo al botón de generar
+        btn_generar.setStyleSheet("background-color:#555;color:white;border-radius:6px;padding:5px;")
+
+        anos_layout.addWidget(anos_label)
+        anos_layout.addWidget(self.input_anos_van)
+        anos_layout.addWidget(btn_generar)
+        
+        layout.addLayout(anos_layout)
+
+        # --- Contenedor para Flujos Dinámicos ---
+        # Este QWidget contendrá los QLineEdit de los flujos
+        self.flujos_container = QWidget()
+        self.flujos_layout = QVBoxLayout(self.flujos_container)
+        self.flujos_layout.setContentsMargins(0, 5, 0, 5) # Margen
+        layout.addWidget(self.flujos_container)
+
+        # --- Inputs Fijos (Tasa e Inversión) ---
         self.input_tasa = QLineEdit()
         self.input_inversion = QLineEdit()
         self.result_van = QTextEdit()
         self.result_van.setReadOnly(True)
 
-        self.input_flujos.setPlaceholderText("Flujos: 2000, 3000, 4000")
-        self.input_tasa.setPlaceholderText("Tasa de descuento (%)")
-        self.input_inversion.setPlaceholderText("Inversión inicial")
+        self.input_tasa.setPlaceholderText("Tasa de descuento (%) (ej: 10)")
+        self.input_inversion.setPlaceholderText("Inversión inicial (ej: 500000)")
 
         btn = QPushButton("Calcular VAN")
         btn.clicked.connect(self._calcular_van)
-        btn.setStyleSheet("background-color:#4CAF50;color:white;font-weight:bold;border-radius:6px;")
+        btn.setStyleSheet("background-color:#4CAF50;color:white;font-weight:bold;border-radius:6px;padding:5px;") # Añadido padding
 
-        for i in [self.input_flujos, self.input_tasa, self.input_inversion, btn, self.result_van]:
-            layout.addWidget(i)
+        layout.addWidget(self.input_tasa)
+        layout.addWidget(self.input_inversion)
+        layout.addWidget(btn)
+        layout.addWidget(self.result_van, 1) # El '1' hace que se expanda
+
         return w
 
     def _vista_margen(self):
@@ -173,16 +226,31 @@ class FinanzasApp(QMainWindow):
         self.stacked.setCurrentIndex(index)
 
     def _calcular_van(self):
-        from finance import calcular_van
+        from finance import calcular_van # Es mejor mover estos imports al inicio del archivo
         try:
-            flujos = [float(x.strip()) for x in self.input_flujos.text().split(",")]
+            # --- SECCIÓN MODIFICADA ---
+            if not self.van_flow_inputs:
+                 raise ValueError("Primero debe generar los campos de flujo.")
+            
+            flujos = []
+            for i, campo_flujo in enumerate(self.van_flow_inputs):
+                flujo_text = campo_flujo.text().strip()
+                if not flujo_text:
+                    # Lanza error si un campo está vacío
+                    raise ValueError(f"El campo 'Flujo Año {i + 1}' no puede estar vacío.")
+                flujos.append(float(flujo_text))
+            # --- FIN DE SECCIÓN MODIFICADA ---
+
             tasa = float(self.input_tasa.text())
             inv = float(self.input_inversion.text())
+            
             van = calcular_van(flujos, tasa, inv)
             msg = f"VAN = {van:.2f}\n\n{'Proyecto rentable ✅' if van > 0 else 'Proyecto no rentable ❌'}"
             self.result_van.setText(msg)
+            
         except Exception as e:
-            QMessageBox.warning(self, "Error", str(e))
+            # Damos un mensaje de error más específico
+            QMessageBox.warning(self, "Error de Cálculo", f"Error al calcular: {e}")
 
     def _calcular_margen(self):
         from finance import margen_contribucion_unitario, margen_contribucion_porcentual
@@ -205,3 +273,35 @@ class FinanzasApp(QMainWindow):
             self.result_eq.setText(f"Punto de equilibrio: {unidades:.2f} unidades")
         except Exception as e:
             QMessageBox.warning(self, "Error", str(e))
+
+    def _generar_campos_flujo(self):
+        # 1. Limpiar campos anteriores del layout
+        # Iteramos en reversa para eliminar widgets de forma segura
+        for i in reversed(range(self.flujos_layout.count())): 
+            widget = self.flujos_layout.itemAt(i).widget()
+            if widget is not None:
+                widget.setParent(None)
+        
+        # 2. Limpiar nuestra lista de referencia
+        self.van_flow_inputs.clear()
+
+        try:
+            # 3. Obtener el número de años
+            num_anos = int(self.input_anos_van.text())
+
+            if num_anos <= 0:
+                raise ValueError("El número de años debe ser positivo.")
+            if num_anos > 50: # Límite razonable
+                raise ValueError("El límite es 50 años.")
+
+            # 4. Crear y añadir los nuevos campos
+            for i in range(num_anos):
+                flujo_input = QLineEdit()
+                flujo_input.setPlaceholderText(f"Flujo del Año {i + 1}")
+                
+                # Añadir al layout y a nuestra lista
+                self.flujos_layout.addWidget(flujo_input)
+                self.van_flow_inputs.append(flujo_input)
+
+        except Exception as e:
+            QMessageBox.warning(self, "Error de Años", f"Por favor, ingrese un número válido.\n{e}")
